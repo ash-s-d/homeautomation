@@ -5,28 +5,39 @@ import json
 import sys
 import time
 
-from classes.netutils import NetUtils
-from classes.netudpcomm import NetUDPComm
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from classes.dbmodel import Base, Camera, User, WifiBridge, Zone
 from classes.milightcontroller import MilightController
 from classes.milightcontroller import MilightControllerException
-from classes.nodedaemon import NodeDaemon
-from classes.homeautomationdatastore import HomeAutomationDataStore
 
 settings = configparser.ConfigParser()
 settings._interpolation = configparser.ExtendedInterpolation()
 
 settings.read("settings.ini")
 
-# data_store = HomeAutomationDataStore(
-#     settings.get("General", "DatabaseFile"))
+engine = create_engine("sqlite:///" + settings.get("General", "DatabaseFile"))
+
+Base.metadata.bind = engine
+ 
+Session = sessionmaker(bind=engine)
+
+session = Session()
+
+for user in session.query(User):
+    print user.password
+
+bridge = session.query(WifiBridge).filter(Zone.id == "1").one()
+
+print bridge.mac_address
 
 # milight_controller = MilightController(
 #     int(settings.get("MiLight", "Port")),
 #     int(settings.get("MiLight", "AdminPort")),
 #     json.loads(settings.get("MiLight", "DiscoveryMessages")),
 #     int(settings.get("MiLight", "DiscoveryWaitTime")),
-#     json.loads(settings.get("MiLight", "Commands")),
-#     data_store
+#     json.loads(settings.get("MiLight", "Commands"))
 # )
 
 # try:
@@ -40,7 +51,3 @@ settings.read("settings.ini")
 
 # except MilightControllerException as error:
 #     print error
-
-node_daemon = NodeDaemon("Pi Camera 1", int(settings.get(
-    "Camera", "Port")), int(settings.get("Camera", "AdminPort")))
-node_daemon.start_up()

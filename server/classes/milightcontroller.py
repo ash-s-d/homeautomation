@@ -23,17 +23,15 @@ class MilightController(object):
     _discovery_msgs = None
     _discovery_wait_time = None
     _commands = None
-    _data_store = None
 
     _net_udp_comm = None
 
-    def __init__(self, port, admin_port, discovery_msgs, discovery_wait_time, commands, data_store):
+    def __init__(self, port, admin_port, discovery_msgs, discovery_wait_time, commands):
         self._port = port
         self._admin_port = admin_port
         self._discovery_msgs = discovery_msgs
         self._discovery_wait_time = discovery_wait_time
         self._commands = commands
-        self._data_store = data_store
 
         self._net_udp_comm = NetUDPComm()
 
@@ -51,22 +49,20 @@ class MilightController(object):
 
         return commands
 
-    def list_zones(self):
-        return self._data_store.get_zones()
-
     def send_command(self, zone_identifier, command, argument=None):
         ip_address = None
 
         if zone_identifier < 0:
             ip_address = NetUtils.get_broadcast_address()
         else:
-            bridge_info = self._data_store.get_wifi_bridge_in_zone(zone_identifier)
+            bridge_info = self._data_store.get_wifi_bridge_in_zone(
+                zone_identifier)
 
             if len(bridge_info) > 0:
                 ip_address = bridge_info[0]["IP_ADDRESS"]
             else:
                 raise MilightControllerException(
-                        "No Wi-fi bridge in zone with identifier '" + str(zone_identifier) + "'.")
+                    "No Wi-fi bridge in zone with identifier '" + str(zone_identifier) + "'.")
 
         message = None
         command_info = self._get_command_info(command)
@@ -123,7 +119,7 @@ class MilightController(object):
 
             bridges[mac_address.upper()] = (ip_address, name)
 
-        self._data_store.update_wifi_bridges(bridges)
+        return bridges
 
     def _get_command_info(self, command):
         for index, value in enumerate(self._commands):
